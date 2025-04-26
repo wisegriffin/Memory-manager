@@ -1,0 +1,10 @@
+OVERVIEW: 
+    A simple and basic memory manager in C to learn pointers and memory.
+
+    Use an array to allocate memory for manipulation and create headers for blocks of memory in it
+    To save metadata 
+
+
+FEATURES:
+    Allocate and free memory dinamically
+
