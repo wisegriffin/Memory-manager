@@ -7,4 +7,5 @@ OVERVIEW:
 
 FEATURES:
     Allocate and free memory dinamically
+    Show the map of memory
 
