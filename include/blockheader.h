@@ -10,4 +10,6 @@ typedef struct BlockHeader
     struct BlockHeader *next;
 } BlockHeader;
 
+void print_blocks(BlockHeader *root);
+
 #endif
