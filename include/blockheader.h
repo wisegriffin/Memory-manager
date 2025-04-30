@@ -3,13 +3,11 @@
 
 #include <stddef.h>
 
-typedef struct BlockHeader
+typedef struct block_header_t
 {
     size_t size;
     int free;
-    struct BlockHeader *next;
-} BlockHeader;
-
-void print_blocks(BlockHeader *root);
+    struct block_header_t *next;
+} block_header_t;
 
 #endif

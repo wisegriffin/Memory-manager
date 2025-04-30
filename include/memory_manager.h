@@ -5,9 +5,10 @@
 
 #define MEMORY_SIZE 1024
 
-extern char memory[MEMORY_SIZE];
-extern BlockHeader *block_list = (BlockHeader*) memory;
-
 void init_memory();
+void print_memory_map();
+
+void *malloc(size_t size);
+void free(void *ptr);
 
 #endif
