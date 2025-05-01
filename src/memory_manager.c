@@ -11,7 +11,7 @@ void init_memory()
     block_list->next = NULL;
 }
 
-void *malloc(size_t size)
+void *my_malloc(size_t size)
 {
     block_header_t *current = block_list;
     
@@ -28,17 +28,19 @@ void *malloc(size_t size)
     return NULL;
 }
 
-void free(void *ptr)
+void my_free(void *ptr)
 {
     printf("freeing %p...\n", ptr);
+
     if (!ptr) return;
-    if (ptr < (void*)memory || ptr >= (void*)(memory + MEMORY_SIZE))
+    block_header_t *block = ((block_header_t*)ptr) - 1;
+    if ((void*)block < (void*)memory || (void*)block >= (void*)(memory + MEMORY_SIZE))
     {
         fprintf(stderr, "Error: invalid pointer\n");
         return;
     }
-    block_header_t *block = ((block_header_t*)ptr) - 1;
     block->free = 1;
+    
     printf("freed\n");
 }
 

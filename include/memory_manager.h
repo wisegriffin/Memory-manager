@@ -8,7 +8,7 @@
 void init_memory();
 void print_memory_map();
 
-void *malloc(size_t size);
-void free(void *ptr);
+void *my_malloc(size_t size);
+void my_free(void *ptr);
 
 #endif
