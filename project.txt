@@ -7,4 +7,7 @@ OVERVIEW:
 
 FEATURES:
     Allocate and free memory dinamically
+    Show the map of memory
 
+Compile
+gcc -Iinclude -c main.c src/allocator.c src memory_manager.c src/print_memory_map.c -o bin/program.exe
