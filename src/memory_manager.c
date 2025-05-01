@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 static unsigned char memory[MEMORY_SIZE];
-static block_header_t *block_list = (block_header_t*) memory;
+static block_header_t *block_list = (block_header_t *)memory;
 
 void init_memory()
 {
@@ -14,14 +14,15 @@ void init_memory()
 void *my_malloc(size_t size)
 {
     block_header_t *current = block_list;
-    
+
     while (current != NULL)
     {
         if (current->free && current->size >= size)
         {
+            void *data = (void *)(current + 1);
+            printf("allocating %p...\n", data);
             current->free = 0;
-            printf("allocating %p...\n", (void*)(current + 1));
-            return (void*) (current + 1);
+            return data;
         }
         current = current->next;
     }
@@ -32,23 +33,24 @@ void my_free(void *ptr)
 {
     printf("freeing %p...\n", ptr);
 
-    if (!ptr) return;
-    block_header_t *block = ((block_header_t*)ptr) - 1;
-    if ((void*)block < (void*)memory || (void*)block >= (void*)(memory + MEMORY_SIZE))
+    if (!ptr)
+        return;
+
+    block_header_t *block = ((block_header_t *)ptr) - 1;
+
+    if ((void *)block < (void *)memory || (void *)block >= (void *)(memory + MEMORY_SIZE))
     {
         fprintf(stderr, "Error: invalid pointer\n");
         return;
     }
     block->free = 1;
-    
-    printf("freed\n");
 }
 
 void print_memory_map()
 {
     block_header_t *current = block_list;
 
-    if (!current) 
+    if (!current)
     {
         printf("\nprint_blocks: NULL pointer\n");
         return;
@@ -57,8 +59,8 @@ void print_memory_map()
     int i = 0;
     printf("\n");
     while (current != NULL)
-    {   
-        char *state = current->free? "FREE": "OCCUPIED";
+    {
+        char *state = current->free ? "FREE" : "OCCUPIED";
         printf("| BLOCK %i: %s %i |", i, state, current->size);
         current = current->next;
         i++;
