@@ -13,6 +13,9 @@ static block_header_t *free_list[MAX_ORDER + 1] = {NULL};
 
 static block_header_t *smallest_free_block(size_t size);
 static int remove_block(block_header_t *target);
+static int add_block(block_header_t *target, int order);
+static block_header_t *split(block_header_t *target, size_t request_size, int order);
+
 
 void init_memory()
 {
@@ -24,6 +27,7 @@ void init_memory()
 
 void *my_malloc(size_t size)
 {
+    // ALERT: IMPLEMENT THIS
     /*  block_header_t *current = block_list;
 
      while (current != NULL)
@@ -37,18 +41,25 @@ void *my_malloc(size_t size)
          }
          current = current->next;
      } */
+    
     block_header_t *block = smallest_free_block(size + sizeof(block_header_t));
+    size_t total_block_size = block->size + sizeof(block_header_t);
+
     if (!block)
     {
         printf("Cant find free blocks\n");
     }
-    remove_block(block);
-    remove_block(block);
+    if (block->size > size)
+    {
+        block_header_t *splitted_block;
+        splitted_block = split(block, size, get_order(total_block_size));
+    }
     return NULL;
 }
 
 void my_free(void *ptr)
 {
+    // ALERT: IMPLEMENT THIS
     printf("freeing %p...\n", ptr);
 
     if (!ptr)
@@ -105,8 +116,43 @@ static block_header_t *smallest_free_block(size_t size)
         return NULL;
 }
 
-static void split(block_header_t *target, size_t request_size)
+static block_header_t *split(block_header_t *target, size_t request_size, int order)
 {
+    if (!target)
+    {
+        printf("Null pointer\n");
+        return NULL;
+    }
+    if (remove_block(target) == 0)
+    {
+        size_t block_header_t_size = sizeof(block_header_t);
+        size_t new_size = (target->size + block_header_t_size) / 2;
+
+        // Splitted block size is insuficient, split cancelled
+        if (new_size - block_header_t_size < request_size) return target;
+
+        target->size = new_size - block_header_t_size;
+
+        printf("New size: %d\n", new_size);
+
+        // Create buddy
+        uintptr_t buddy_address = ((uintptr_t)target) + new_size;
+        block_header_t *buddy = (block_header_t*)buddy_address;
+        buddy->size = new_size - block_header_t_size;      
+        
+        printf("Buddy at order %d: %p\n", order - 1, buddy);
+
+        add_block(target, order - 1);
+        add_block(buddy, order - 1);
+
+        split(target, request_size, order - 1);
+    }
+    else
+    {
+        printf("Split failed\n");
+        return NULL;
+    }
+    
 }
 
 // Remove target block from free_list
@@ -119,7 +165,7 @@ static int remove_block(block_header_t *target)
     }
 
     int order = get_order(target->size + sizeof(block_header_t));
-    printf("Order: %d\n", order);
+    printf("Order: %d %p\n", order, target);
     block_header_t *current = free_list[order];
     block_header_t *previous = NULL;
 
@@ -157,7 +203,7 @@ static int remove_block(block_header_t *target)
     return 0;
 }
 
-// Add target block to the end of free_list[order]
+// Add target block to head of free_list[order]
 static int add_block(block_header_t *target, int order)
 {
     if (!target) return 1;
@@ -169,12 +215,10 @@ static int add_block(block_header_t *target, int order)
     }
     else
     {
-        block_header_t *current = free_list[order];
-        while (current->next != NULL)
-        {
-            current = current->next;
-        }
-        current->next = target;
+        target->next = free_list[order];
+        free_list[order] = target;
     }
     return 0;
 }
+
+
