@@ -8,70 +8,62 @@
 // 1Kb
 static unsigned char memory[MEMORY_SIZE];
 
-static block_header_t *block_list = (block_header_t *)memory;
 static block_header_t *free_list[MAX_ORDER + 1] = {NULL};
 
 static block_header_t *smallest_free_block(size_t size);
 static int remove_block(block_header_t *target);
 static int add_block(block_header_t *target, int order);
 static block_header_t *split(block_header_t *target, size_t request_size, int order);
+static int merge(block_header_t *target, int order);
 
 void init_memory()
 {
-    block_list->free = 1;
-    block_list->size = MEMORY_SIZE - sizeof(block_header_t);
-    block_list->next = NULL;
-    free_list[MAX_ORDER] = block_list;
+    block_header_t *root = (block_header_t *)memory;
+    root->free = 1;
+    root->next = NULL;
+    root->size = MEMORY_SIZE - sizeof(block_header_t);
+    free_list[MAX_ORDER] = root;
 }
 
 void *my_malloc(size_t size)
 {
-    // ALERT: IMPLEMENT THIS
-    /*  block_header_t *current = block_list;
-
-     while (current != NULL)
-     {
-         if (current->free && current->size >= size)
-         {
-             void *data = (void *)(current + 1);
-             printf("allocating %p...\n", data);
-             current->free = 0;
-             return data;
-         }
-         current = current->next;
-     } */
-
     block_header_t *block = smallest_free_block(size + sizeof(block_header_t));
     size_t total_block_size = block->size + sizeof(block_header_t);
 
     if (!block)
     {
         printf("Cant find free blocks\n");
+        return NULL;
     }
     if (block->size > size)
     {
-        block_header_t *splitted_block;
-        splitted_block = split(block, size, get_order(total_block_size));
+        block = split(block, size, get_order(total_block_size));
     }
-    return NULL;
+    void *data = (void *)(block + 1);
+    return data;
 }
 
 void my_free(void *ptr)
 {
-    // ALERT: IMPLEMENT THIS
-    printf("freeing %p...\n", ptr);
-
     if (!ptr)
         return;
 
     block_header_t *block = ((block_header_t *)ptr) - 1;
 
+    // Checks if pointer to block is out of memory vector
     if ((void *)block < (void *)memory || (void *)block >= (void *)(memory + MEMORY_SIZE))
     {
         fprintf(stderr, "Error: invalid pointer\n");
         return;
     }
-    block->free = 1;
+
+    size_t total_size = block->size + sizeof(block_header_t);
+    int order = get_order(total_size);
+
+    if (merge(block, order) == 0)
+        return;
+
+    add_block(block, order);
 }
 
 void print_memory_map()
@@ -89,7 +81,8 @@ void print_memory_map()
             current = current->next;
             count++;
         }
-        if (count == 0) printf("empty");
+        if (count == 0)
+            printf("empty");
         printf("\n");
     }
     printf("\n");
@@ -218,4 +211,29 @@ static int add_block(block_header_t *target, int order)
         free_list[order] = target;
     }
     return 0;
+}
+
+static int merge(block_header_t *target, int order)
+{
+    size_t total_target_size = target->size + sizeof(block_header_t);
+    uintptr_t buddy = (uintptr_t)target ^ total_target_size;
+
+    // Buddy does not exist
+    if ((block_header_t *)buddy == NULL)
+        return 1;
+
+    size_t total_buddy_size = ((block_header_t *)buddy)->size + sizeof(block_header_t);
+
+    // Target and buddy are not in the same order
+    if (total_target_size != total_buddy_size)
+        return 1;
+
+    // Buddy is in free list
+    if (remove_block((block_header_t *)buddy) == 0)
+    {
+        target->size = (total_target_size * 2) - sizeof(block_header_t);
+        add_block(target, order + 1);
+        return 0;
+    }
+    return 1;
 }
