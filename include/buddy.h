@@ -1,7 +1,9 @@
 #ifndef BUDDY_H
 #define BUDDY_H
 
-int get_order(int n);
-int order_to_number(int order);
+#include "blockheader.h"
+
+block_header_t *split(block_header_t *target, size_t request_size, int order);
+int merge(block_header_t *target, int order);
 
 #endif

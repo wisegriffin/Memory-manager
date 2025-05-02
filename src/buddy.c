@@ -1,28 +1,65 @@
 #include "buddy.h"
+#include "free_list_manager.h"
+#include <stdint.h>
 
-int get_order(int n)
+// Split target RECURSIVELY until it better fits request_size
+block_header_t *split(block_header_t *target, size_t request_size, int order)
 {
-    int order = 0;
 
-    if (n % 2 != 0) return -1;
-
-    while (n != 1)
+    if (!target)
     {
-        n /= 2;
-        order++;
+        return NULL;
     }
+    if (remove_block(target) == 0)
+    {
+        size_t block_header_t_size = sizeof(block_header_t);
+        size_t new_size = (target->size + block_header_t_size) / 2;
 
-    return order;
+        // Splitted block size is insuficient, split cancelled
+        if (new_size - block_header_t_size < request_size)
+            return target;
+
+        target->size = new_size - block_header_t_size;
+
+
+        // Create buddy
+        uintptr_t buddy_address = ((uintptr_t)target) + new_size;
+        block_header_t *buddy = (block_header_t *)buddy_address;
+        buddy->size = new_size - block_header_t_size;
+
+        add_block(target, order - 1);
+        add_block(buddy, order - 1);
+
+        split(target, request_size, order - 1);
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
-int order_to_number(int order)
+// Merge target with his buddy, return 0 if sucessful
+int merge(block_header_t *target, int order)
 {
-    if (order == 0) return 1;
+    size_t total_target_size = target->size + sizeof(block_header_t);
+    uintptr_t buddy = (uintptr_t)target ^ total_target_size;
 
-    int number = 2;
-    for (; order > 1; order--)
+    // Buddy does not exist
+    if ((block_header_t *)buddy == NULL)
+        return 1;
+
+    size_t total_buddy_size = ((block_header_t *)buddy)->size + sizeof(block_header_t);
+
+    // Target and buddy are not in the same order
+    if (total_target_size != total_buddy_size)
+        return 1;
+
+    // Buddy is in free list
+    if (remove_block((block_header_t *)buddy) == 0)
     {
-        number *= 2;
+        target->size = (total_target_size * 2) - sizeof(block_header_t);
+        add_block(target, order + 1);
+        return 0;
     }
-    return number;
+    return 1;
 }

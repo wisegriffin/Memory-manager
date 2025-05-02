@@ -5,7 +5,6 @@
 
 #define MEMORY_SIZE 1024
 
-void init_memory();
 void print_memory_map();
 
 void *my_malloc(size_t size);

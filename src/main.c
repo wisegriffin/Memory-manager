@@ -4,7 +4,6 @@
 
 int main(int argc, char const *argv[])
 {
-    init_memory();
     
     print_memory_map();
     char *palavra = my_malloc(50);
