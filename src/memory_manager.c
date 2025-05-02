@@ -1,14 +1,15 @@
 #include "memory_manager.h"
 #include "buddy.h"
 #include <stdio.h>
+#include <stdint.h>
 
-#define MEMORY_ORDER 10
+#define MAX_ORDER 10
 
 // 1Kb
 static unsigned char memory[MEMORY_SIZE];
 
 static block_header_t *block_list = (block_header_t *)memory;
-static block_header_t *free_list[MEMORY_ORDER + 1];
+static block_header_t *free_list[MAX_ORDER + 1];
 
 static block_header_t *smallest_free_block(size_t size);
 
@@ -17,33 +18,33 @@ void init_memory()
     block_list->free = 1;
     block_list->size = MEMORY_SIZE - sizeof(block_header_t);
     block_list->next = NULL;
-    free_list[MEMORY_ORDER] = block_list;
+    free_list[MAX_ORDER] = block_list;
 }
 
 void *my_malloc(size_t size)
 {
-   /*  block_header_t *current = block_list;
+    /*  block_header_t *current = block_list;
 
-    while (current != NULL)
-    {
-        if (current->free && current->size >= size)
-        {
-            void *data = (void *)(current + 1);
-            printf("allocating %p...\n", data);
-            current->free = 0;
-            return data;
-        }
-        current = current->next;
-    } */
+     while (current != NULL)
+     {
+         if (current->free && current->size >= size)
+         {
+             void *data = (void *)(current + 1);
+             printf("allocating %p...\n", data);
+             current->free = 0;
+             return data;
+         }
+         current = current->next;
+     } */
 
     block_header_t *block = smallest_free_block(size + sizeof(block_header_t));
 
     // No free memory
-    if (!block) return NULL;
+    if (!block)
+        return NULL;
 
     if (block->size > size)
     {
-        
     }
 
     return NULL;
@@ -91,18 +92,67 @@ void print_memory_map()
 static block_header_t *smallest_free_block(size_t size)
 {
     block_header_t *current;
-    for (int i = 0; i <= MEMORY_ORDER; i++)
+    for (int i = 0; i <= MAX_ORDER; i++)
     {
         current = free_list[i];
 
-        if (!current) continue;
-        if (order_to_number(i) >= size) return current;
+        if (!current)
+            continue;
+        if (order_to_number(i) >= size)
+            return current;
     }
     // There is no free blocks
-    if (!current) return NULL;
+    if (!current)
+        return NULL;
 }
 
-static void split()
+static void split(block_header_t *target, size_t request_size)
+{
+
+}
+
+static int remove_block(block_header_t *target)
+{
+    if (!target)
+        return 1;
+
+    int order = get_order(target->size + sizeof(block_header_t));
+
+    block_header_t *current = free_list[order];
+    block_header_t *previous = NULL;
+
+    // Finds target
+    while (current != target || current != NULL)
+    {
+        previous = current;
+        current = current->next;
+    }
+    if (!current)
+        return 1;
+
+    if (!current->next)
+    {
+        // The target is the first node
+        if (!previous)
+        {
+            free_list[order] = NULL;
+        }
+        // Target is the last node
+        else
+        {
+            previous->next = NULL;
+        }
+    }
+    // Target is in the middle
+    else
+    {
+        previous->next = current->next;
+    }
+
+    return 0;
+}
+
+static void add_block(block_header_t *target, int order)
 {
 
 }
