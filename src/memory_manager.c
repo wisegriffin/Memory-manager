@@ -9,9 +9,10 @@
 static unsigned char memory[MEMORY_SIZE];
 
 static block_header_t *block_list = (block_header_t *)memory;
-static block_header_t *free_list[MAX_ORDER + 1];
+static block_header_t *free_list[MAX_ORDER + 1] = {NULL};
 
 static block_header_t *smallest_free_block(size_t size);
+static int remove_block(block_header_t *target);
 
 void init_memory()
 {
@@ -36,17 +37,13 @@ void *my_malloc(size_t size)
          }
          current = current->next;
      } */
-
     block_header_t *block = smallest_free_block(size + sizeof(block_header_t));
-
-    // No free memory
     if (!block)
-        return NULL;
-
-    if (block->size > size)
     {
+        printf("Cant find free blocks\n");
     }
-
+    remove_block(block);
+    remove_block(block);
     return NULL;
 }
 
@@ -95,10 +92,12 @@ static block_header_t *smallest_free_block(size_t size)
     for (int i = 0; i <= MAX_ORDER; i++)
     {
         current = free_list[i];
-
+        printf("%p ", current);
         if (!current)
             continue;
+        printf("%d ", order_to_number(i));
         if (order_to_number(i) >= size)
+            printf("The block fits!\n");
             return current;
     }
     // There is no free blocks
@@ -108,27 +107,33 @@ static block_header_t *smallest_free_block(size_t size)
 
 static void split(block_header_t *target, size_t request_size)
 {
-
 }
 
+// Remove target block from free_list
 static int remove_block(block_header_t *target)
 {
     if (!target)
+    {
+        printf("Null pointer\n");
         return 1;
+    }
 
     int order = get_order(target->size + sizeof(block_header_t));
-
+    printf("Order: %d\n", order);
     block_header_t *current = free_list[order];
     block_header_t *previous = NULL;
 
     // Finds target
-    while (current != target || current != NULL)
+    while (current != NULL && current != target)
     {
         previous = current;
         current = current->next;
     }
     if (!current)
+    {
+        printf("Cant find target block\n");
         return 1;
+    }
 
     if (!current->next)
     {
@@ -152,7 +157,24 @@ static int remove_block(block_header_t *target)
     return 0;
 }
 
-static void add_block(block_header_t *target, int order)
+// Add target block to the end of free_list[order]
+static int add_block(block_header_t *target, int order)
 {
+    if (!target) return 1;
 
+    // List is empty
+    if (free_list[order] == NULL)
+    {
+        free_list[order] = target;
+    }
+    else
+    {
+        block_header_t *current = free_list[order];
+        while (current->next != NULL)
+        {
+            current = current->next;
+        }
+        current->next = target;
+    }
+    return 0;
 }
